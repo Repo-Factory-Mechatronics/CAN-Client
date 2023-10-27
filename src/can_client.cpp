@@ -6,9 +6,9 @@ constexpr const int MAX_POWER                            = 100;
 constexpr const std::array<uint8_t, 5> TURN_OFF_LIGHT    {0x04, 0x00, 0x04, 0x00, 0x00};
 constexpr const std::array<uint8_t, 5> ENABLE_LIGHT      {0x04, 0x00, 0x04, 0x00, 0x01};
 constexpr const std::array<uint8_t, 5> TURN_ON_LIGHT     {0x04, 0x00, 0x04, 0x00, 0x64};
-constexpr const std::array<uint8_t, 5> SAFE_MODE         {0,0,0,0,0x04};
+constexpr const std::array<uint8_t, 5> SAFE_MODE         {0x00, 0x00, 0x00, 0x00, 0x04};
 constexpr const std::array<uint8_t, 3> ALL_CLEAR         {0x00A, 0, 0};
-constexpr const std::array<uint8_t, 3> KILL              {0x00, 0, 0};
+constexpr const std::array<uint8_t, 3> KILL              {0x000, 0, 0};
 constexpr const std::array<uint8_t, 1> NOTHING           {0x65};       // Sending number above 100 (in hex) will have no affect on system
 
 void CanClient::sendNothing(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
