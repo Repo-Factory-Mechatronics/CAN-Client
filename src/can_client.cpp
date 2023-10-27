@@ -1,71 +1,109 @@
 #include "can_client.hpp"
+#include <cstdint>
+#include <array>
 
-CanClient::CanClient()
+constexpr const int MAX_POWER                            = 100;
+constexpr const std::array<uint8_t, 5> TURN_OFF_LIGHT    {0x04, 0x00, 0x04, 0x00, 0x00};
+constexpr const std::array<uint8_t, 5> ENABLE_LIGHT      {0x04, 0x00, 0x04, 0x00, 0x01};
+constexpr const std::array<uint8_t, 5> TURN_ON_LIGHT     {0x04, 0x00, 0x04, 0x00, 0x64};
+constexpr const std::array<uint8_t, 5> SAFE_MODE         {0,0,0,0,0x04};
+constexpr const std::array<uint8_t, 3> ALL_CLEAR         {0x00A, 0, 0};
+constexpr const std::array<uint8_t, 3> KILL              {0x00, 0, 0};
+constexpr const std::array<uint8_t, 1> NOTHING           {0x65};       // Sending number above 100 (in hex) will have no affect on system
+
+void CanClient::sendNothing(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
 {
-    this->node = rclcpp::Node::make_shared("can_client");
-    this->can_client = node->create_client<scion_types::srv::SendFrame>("send_can_raw");
+    const auto can_frame = 
+    RTL::SendFrameRequest
+    {
+        .can_id = static_cast<uint8_t>(CanDriver::Command::MOTOR),
+        .can_dlc = 1,
+        .can_data = NOTHING.data()
+    };
+    ServiceAPIs::SendFrame(node, can_client, can_frame);
 }
 
-void CanClient::sendFrame(int32_t can_id, int8_t can_dlc, unsigned char can_data[])
+void CanClient::setBotInSafeMode(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
 {
-    auto can_request = std::make_shared<scion_types::srv::SendFrame::Request>();
-    can_request->can_id = can_id;
-    can_request->can_dlc = can_dlc;
-    std::copy
-    (
-        can_data,
-        can_data + can_dlc,
-        can_request->can_data.begin()
-    );
-    auto can_future = can_client->async_send_request(can_request);
-    rclcpp::spin_until_future_complete(node, can_future);
-    RCLCPP_INFO(node->get_logger(), "[CanSendService::client] Client Sent Message With Id %03x", can_id);
+    const auto can_frame = 
+    RTL::SendFrameRequest
+    {
+        .can_id = static_cast<uint8_t>(CanDriver::Command::STOW),
+        .can_dlc = 5,
+        .can_data = SAFE_MODE.data()
+    };
+    ServiceAPIs::SendFrame(node, can_client, can_frame);
 }
 
-void CanClient::sendNothing()
+void CanClient::turnOnLight(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
 {
-    std::vector<unsigned char> nothing{0x00};
-    sendFrame(0x010, 0, nothing.data());
+    const auto enable_frame = 
+    RTL::SendFrameRequest
+    {
+        .can_id = static_cast<uint8_t>(CanDriver::Command::STOW),
+        .can_dlc = 5,
+        .can_data = ENABLE_LIGHT.data()
+    };
+    ServiceAPIs::SendFrame(node, can_client, enable_frame);
+
+    const auto turn_on_frame = 
+    RTL::SendFrameRequest
+    {
+        .can_id = static_cast<uint8_t>(CanDriver::Command::STOW),
+        .can_dlc = 5,
+        .can_data = TURN_ON_LIGHT.data()
+    };
+    ServiceAPIs::SendFrame(node, can_client, turn_on_frame);
 }
 
-void CanClient::setBotInSafeMode()
+void CanClient::turnOffLight(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
 {
-    std::vector<unsigned char> safeModeFrame{0,0,0,0,0x04};
-    sendFrame(0x022, 5, safeModeFrame.data());
+    const auto turn_on_frame = 
+    RTL::SendFrameRequest
+    {
+        .can_id = static_cast<uint8_t>(CanDriver::Command::STOW),
+        .can_dlc = 5,
+        .can_data = TURN_OFF_LIGHT.data()
+    };
+    ServiceAPIs::SendFrame(node, can_client, turn_on_frame);
 }
 
-void CanClient::turnOnLight() 
+void CanClient::killRobot(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
 {
-    std::vector<unsigned char> lightEnable{0x04, 0x00, 0x00, 0x00, 0x01};
-    CanClient::sendFrame(0x22, lightEnable.size(), lightEnable.data());
-    std::vector<unsigned char> lightOn{0x04, 0x00, 0x04, 0x00, 0x64};
-    CanClient::sendFrame(0x22, lightEnable.size(), lightOn.data());
+    const auto turn_on_frame = 
+    RTL::SendFrameRequest
+    {
+        .can_id = static_cast<uint8_t>(CanDriver::Command::SOFTKILL),
+        .can_dlc = 0,
+        .can_data = KILL.data()
+    };
+    ServiceAPIs::SendFrame(node, can_client, turn_on_frame);
 }
 
-void CanClient::turnOffLight() 
+void CanClient::allClear(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
 {
-    std::vector<unsigned char> lightOn{0x04, 0x00, 0x04, 0x00, 0x00};
-    CanClient::sendFrame(0x22, 5, lightOn.data());
+    const auto turn_on_frame = 
+    RTL::SendFrameRequest
+    {
+        .can_id = static_cast<uint8_t>(CanDriver::Command::CLEARERR),
+        .can_dlc = 0,
+        .can_data = ALL_CLEAR.data()
+    };
+    ServiceAPIs::SendFrame(node, can_client, turn_on_frame);
 }
 
-void CanClient::killRobot()
+void CanClient::make_motor_request 
+(
+    const RTL::node_t& node, 
+    const RTL::send_frame_client_t& can_client, 
+    const std::vector<float>& thrusts
+)
 {
-    CanClient::sendFrame(0x00, 0, 0);
-}
-
-void CanClient::allClear()
-{
-    CanClient::sendFrame(0x00A, 0, 0);
-}
-
-std::vector<int> CanClient::make_motor_request(const std::vector<float>& thrusts, int motor_count, int max_power)
-{
-    #define MOTOR_ID 0x010
     /* Thrusts come out of PID as a float between -1 and 1; motors need int value from -100 to 100 */
     std::vector<int> convertedThrusts;
-    for (float thrust : thrusts)
+    for (const float thrust : thrusts)
     {
-        convertedThrusts.push_back(((int)(thrust * max_power)));
+        convertedThrusts.push_back(((int)(thrust * MAX_POWER)));
     }
 
     /* 
@@ -75,18 +113,24 @@ std::vector<int> CanClient::make_motor_request(const std::vector<float>& thrusts
     */          
 
     std::vector<unsigned char> byteThrusts;
-    for (int thrust : convertedThrusts)
+    for (const int thrust : convertedThrusts)
     {
         byteThrusts.push_back(thrust & 0xFF);
     }
     /* See exactly our 8 thrust values sent to motors */
 
-////////////////////////////////////////// BUILD REQUEST //////////////////////////////////////////
+    ////////////////////////////////////////// BUILD REQUEST //////////////////////////////////////////
     /* 
     * Our frame will send CAN request 
     * one byte for each value -100 to 100 
     */
+   const auto can_frame =
+    RTL::SendFrameRequest
+    {
+        .can_id = static_cast<uint8_t>(CanDriver::Command::MOTOR),
+        .can_dlc = (int8_t)byteThrusts.size(),
+        .can_data = byteThrusts.data()
+    };
 
-    CanClient::sendFrame(MOTOR_ID, motor_count, byteThrusts.data());
-    return convertedThrusts;
+    ServiceAPIs::SendFrame(node, can_client, can_frame);
 }
