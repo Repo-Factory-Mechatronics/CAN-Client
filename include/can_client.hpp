@@ -8,13 +8,13 @@
 
 namespace CanClient
 {
-    void sendNothing(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
-    void setBotInSafeMode(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
-    void turnOnLight(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
-    void turnOffLight(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
-    void killRobot(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
-    void allClear(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
-    void make_motor_request 
+    int sendNothing(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
+    int setBotInSafeMode(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
+    int turnOnLight(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
+    int turnOffLight(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
+    int killRobot(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
+    int allClear(const RTL::node_t& node, const RTL::send_frame_client_t& can_client);
+    int make_motor_request 
     (
         const RTL::node_t& node, 
         const RTL::send_frame_client_t& can_client, 
