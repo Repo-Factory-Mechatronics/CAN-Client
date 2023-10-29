@@ -3,6 +3,7 @@
 #include <vector>
 
 const int MAX_POWER                           = 100;
+const int NO_RESPONSE                         = -1;
 const std::vector<uint8_t> TURN_OFF_LIGHT    {0x04, 0x00, 0x04, 0x00, 0x00};
 const std::vector<uint8_t> ENABLE_LIGHT      {0x04, 0x00, 0x04, 0x00, 0x01};
 const std::vector<uint8_t> TURN_ON_LIGHT     {0x04, 0x00, 0x04, 0x00, 0x64};
@@ -20,7 +21,8 @@ int CanClient::sendNothing(const RTL::node_t& node, const RTL::send_frame_client
         .can_dlc = 1,
         .can_data = NOTHING
     };
-    return ServiceAPIs::SendFrame(node, can_client, can_frame)->status;
+    const auto response = ServiceAPIs::SendFrame(node, can_client, can_frame);
+    return response ? response->status : NO_RESPONSE;
 }
 
 int CanClient::setBotInSafeMode(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
@@ -32,7 +34,8 @@ int CanClient::setBotInSafeMode(const RTL::node_t& node, const RTL::send_frame_c
         .can_dlc = 5,
         .can_data = SAFE_MODE
     };
-    return ServiceAPIs::SendFrame(node, can_client, can_frame)->status;
+    const auto response = ServiceAPIs::SendFrame(node, can_client, can_frame);
+    return response ? response->status : NO_RESPONSE;
 }
 
 int CanClient::turnOnLight(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
@@ -53,7 +56,8 @@ int CanClient::turnOnLight(const RTL::node_t& node, const RTL::send_frame_client
         .can_dlc = 5,
         .can_data = TURN_ON_LIGHT
     };
-    return ServiceAPIs::SendFrame(node, can_client, turn_on_frame)->status;
+    const auto response = ServiceAPIs::SendFrame(node, can_client, turn_on_frame);
+    return response ? response->status : NO_RESPONSE;
 }
 
 int CanClient::turnOffLight(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
@@ -65,7 +69,8 @@ int CanClient::turnOffLight(const RTL::node_t& node, const RTL::send_frame_clien
         .can_dlc = 5,
         .can_data = TURN_OFF_LIGHT
     };
-    return ServiceAPIs::SendFrame(node, can_client, turn_on_frame)->status;
+    const auto response = ServiceAPIs::SendFrame(node, can_client, turn_on_frame);
+    return response ? response->status : NO_RESPONSE;
 }
 
 int CanClient::killRobot(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
@@ -77,7 +82,8 @@ int CanClient::killRobot(const RTL::node_t& node, const RTL::send_frame_client_t
         .can_dlc = 0,
         .can_data = KILL
     };
-    return ServiceAPIs::SendFrame(node, can_client, turn_on_frame)->status;
+    const auto response = ServiceAPIs::SendFrame(node, can_client, turn_on_frame);
+    return response ? response->status : NO_RESPONSE;
 }
 
 int CanClient::allClear(const RTL::node_t& node, const RTL::send_frame_client_t& can_client)
@@ -89,7 +95,8 @@ int CanClient::allClear(const RTL::node_t& node, const RTL::send_frame_client_t&
         .can_dlc = 0,
         .can_data = ALL_CLEAR
     };
-    return ServiceAPIs::SendFrame(node, can_client, turn_on_frame)->status;
+    const auto response = ServiceAPIs::SendFrame(node, can_client, turn_on_frame);
+    return response ? response->status : NO_RESPONSE;
 }
 
 int CanClient::make_motor_request 
@@ -132,5 +139,6 @@ int CanClient::make_motor_request
         .can_data = byteThrusts
     };
 
-    return ServiceAPIs::SendFrame(node, can_client, can_frame)->status;
+    const auto response = ServiceAPIs::SendFrame(node, can_client, can_frame);
+    return response ? response->status : NO_RESPONSE;
 }
